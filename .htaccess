@@ -1,0 +1,7 @@
+RewriteEngine On
+RewriteBase /
+
+RewriteRule ^(config|utils)($|/) - [L,R=403]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^([^\.]+)$ $1.php [NC,L]
