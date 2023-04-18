@@ -156,4 +156,9 @@ class Utils
             'results' => $paged_results
         );
     }
+
+    public static function response($data = [])
+    {
+        return json_encode($data);
+    }
 }
