@@ -2,8 +2,7 @@
 
 namespace connection;
 
-require_once '../config/database.php';
-include_once "../autoload.php";
+require_once dirname(__DIR__, 1) . '/config/database.php';
 
 use mysqli;
 
