@@ -91,18 +91,16 @@
         }
 
         main {
-            display: flex;
-            flex-direction: row;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
             gap: 20px;
-            width: 100%;
+            margin: 20px;
             justify-content: center;
         }
 
         @media screen and (max-width: 600px) {
             main {
-                flex-direction: column;
-                gap: 10px;
-                justify-content: center;
+                grid-template-columns: repeat(1, 1fr);
             }
         }
 
@@ -110,9 +108,13 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            padding: 25px;
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            height: fit-content;
+            width: fit-content;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
         }
 
         .input-group {
@@ -191,6 +193,43 @@
             <p class="hidden" id="responseRegistro">
             </p>
         </div>
+        <div class="card">
+            <h2 class="titulo">Olvide mi contraseña</h2>
+            <p class="parrafo">
+                Olvide mi contrase&ntilde;a
+            </p>
+            <form class="formulario" id="formOlvide" novalidate>
+                <div class="input-group">
+                    <label for="correoR">Correo electrónico</label>
+                    <input class="input" type="email" id="correoOlv" placeholder="Ingrese el correo">
+                </div>
+                <button class="button" type="submit">Enviar correo</button>
+            </form>
+
+            <p class="hidden" id="responseOlvide">
+            </p>
+        </div>
+        <div class="card">
+            <h2 class="titulo">Restablecer contraseña</h2>
+            <p class="parrafo">
+                Restablecer contraseña
+            </p>
+            <form class="formulario" id="formRestablecer" novalidate>
+                <input type="hidden" id="tokenRes" value="<?php echo isset($_GET['token']) ? $_GET['token'] : null ?>">
+                <div class="input-group">
+                    <label for="correoR">Correo electrónico</label>
+                    <input class="input" type="email" id="correoRes" placeholder="Ingrese el correo">
+                </div>
+                <div class="input-group">
+                    <label for="passwordR">Contrase&ntilde;a</label>
+                    <input class="input" type="password" id="passwordRes" placeholder="Ingrese la contrase&ntilde;a">
+                </div>
+                <button class="button" type="submit">Restablecer contrase&ntilde;a</button>
+            </form>
+
+            <p class="hidden" id="responseRestablecer">
+            </p>
+        </div>
     </main>
 
 
@@ -199,11 +238,15 @@
         const form = document.getElementById('formulario');
         const formLogin = document.getElementById('formLogin');
         const formRegistro = document.getElementById('formRegistro');
+        const formRestablecer = document.getElementById('formRestablecer');
+        const formOlvide = document.getElementById('formOlvide');
 
         // Contenedores de respuesta
         const dataContainer = document.getElementById('data');
         const responseLogin = document.getElementById('responseLogin');
         const responseRegistro = document.getElementById('responseRegistro');
+        const responseRestablecer = document.getElementById('responseRestablecer');
+        const responseOlvide = document.getElementById('responseOlvide');
 
         // Campos de entrada
         const token = document.getElementById('token');
@@ -213,6 +256,103 @@
         const apellido = document.getElementById('apellido');
         const correoR = document.getElementById('correoR');
         const passwordR = document.getElementById('passwordR');
+        const correoOlv = document.getElementById('correoOlv');
+        const passwordRes = document.getElementById('passwordRes');
+        const correoRes = document.getElementById('correoRes');
+        const tokenRes = document.getElementById('tokenRes');
+
+        // En este se hace la solicitud de cambio de contraseña, se envía un correo electrónico
+        formOlvide.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            responseOlvide.classList.remove('hidden');
+            responseOlvide.classList.add('data');
+
+            let data = {
+                'correo': correoOlv.value,
+            }
+
+            async function fetchAPI(url, options) {
+                const response = await fetch(url, options);
+                return await response.json();
+            }
+
+            fetchAPI('http://localhost/YosyPics_Api/api/auth/forgot', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(data => {
+                    console.log(data);
+
+                    if (data.status) {
+                        responseOlvide.innerHTML = `<p>${data.message}</p>`;
+                    } else {
+                        let mensajes = data.message;
+
+                        if (typeof mensajes === 'string') {
+                            responseOlvide.innerHTML = `<p>${mensajes}</p>`;
+                        } else {
+                            Object.entries(mensajes).forEach(([key, value]) => {
+                                responseOlvide.innerHTML += `🔴 ${value} <br>`
+                            })
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.log(error);
+                })
+        })
+
+        // En este evento se realiza el restablecimiento de contraseña
+        formRestablecer.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            responseRestablecer.classList.remove('hidden');
+            responseRestablecer.classList.add('data');
+
+            let data = {
+                'correo': correoRes.value,
+                'password': passwordRes.value,
+                'token': tokenRes.value,
+            }
+
+            async function fetchAPI(url, options) {
+                const response = await fetch(url, options);
+
+                return await response.json();
+            }
+
+            fetchAPI('http://localhost/YosyPics_Api/api/auth/reset', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(data => {
+                    console.log(data);
+                    if (data.status) {
+                        responseRestablecer.innerHTML = `<p>${data.message}</p>`;
+                    } else {
+                        let mensajes = data.message;
+
+                        if (typeof mensajes === 'string') {
+                            responseRestablecer.innerHTML = `<p>${mensajes}</p>`;
+                        } else {
+                            Object.entries(mensajes).forEach(([key, value]) => {
+                                responseRestablecer.innerHTML += `🔴 ${value} <br>`
+                            })
+                        }
+                    }
+
+                })
+                .catch(error => {
+                    console.log(error);
+                })
+        })
 
         // En este evento se realiza el registro de un nuevo usuario
         formRegistro.addEventListener('submit', (e) => {

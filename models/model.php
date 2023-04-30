@@ -21,7 +21,7 @@ class Model
         $this->connection = $connectionInstance->getConnection();
     }
 
-    public function authUser()
+    public function authUser(): array
     {
         $token = Utils::getTokenFromHeader();
 
@@ -68,5 +68,46 @@ class Model
 
         $this->connection->close();
         return false;
+    }
+
+    public function checkEmailExists(string $email): bool
+    {
+        $email = mysqli_real_escape_string($this->connection, $email);
+
+        $query = "SELECT * FROM $this->table_user WHERE correo = '$email'";
+
+        $result = mysqli_query($this->connection, $query);
+
+        if (mysqli_num_rows($result) > 0) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function checkIsCurrentPasswordIsValid(string $email, string $currentPassword): bool
+    {
+        $query = "SELECT * FROM $this->table_user WHERE correo = '$email' AND password = '$currentPassword'";
+
+        $result = mysqli_query($this->connection, $query);
+
+        if (mysqli_num_rows($result) > 0) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function saveLoginToken($id = null): string
+    {
+        if ($id) {
+            $token = Utils::createToken();
+            $date = Utils::timestamps();
+            $query = "INSERT INTO $this->table_token (id_usuario, token, nombre, fecha ) VALUES ('$id', '$token', 'Login token', '$date')";
+            mysqli_query($this->connection, $query);
+            return $token;
+        }
+
+        return null;
     }
 }

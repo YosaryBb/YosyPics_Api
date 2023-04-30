@@ -31,6 +31,14 @@ class Utils extends Constants
         return dirname(__DIR__, 1) . '/';
     }
 
+    public static function getBaseUrl(): string
+    {
+        $host = $_SERVER['HTTP_HOST'];
+        $http = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+        $projectName = Constants::APP_NAME . '/';
+        return $http . '://' . $host . '/' . $projectName;
+    }
+
     public static function createStoragePath()
     {
         if (!file_exists(self::STORAGE_PATH_NAME)) {
@@ -238,19 +246,33 @@ class Utils extends Constants
         header('X-RateLimit-Remaining: ' . self::RATE_LIMIT_REMAINING);
     }
 
-    public static function getContents(): mixed
+    public static function getContents(): array
     {
-        if (self::validateRequestMethod('POST') && !empty($_POST)) {
-            return $_POST;
-        }
+        $method = self::getRequestMethod();
 
-        $body = file_get_contents('php://input');
+        if (in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'])) {
+            $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+            $data = file_get_contents('php://input');
 
-        if ($body === false || $body === '') {
+            if (strpos($contentType, 'application/json') !== false) {
+                $data = json_decode($data, true);
+            } elseif (strpos($contentType, 'application/x-www-form-urlencoded') !== false) {
+                parse_str($data, $data);
+            } elseif (strpos($contentType, 'multipart/form-data') !== false) {
+                $data = $_POST;
+            }
+
+            return $data;
+        } elseif ($method === 'GET') {
+            return $_GET;
+        } else {
             return [];
         }
+    }
 
-        return self::parseResponse($body);
+    public static function getRequestMethod(): string
+    {
+        return $_SERVER['REQUEST_METHOD'] ?? '';
     }
 
     public static function hasFile(string $file_name): bool
