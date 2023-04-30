@@ -15,11 +15,12 @@ try {
     }
 
     $input = Utils::getContents();
-    $auth = new Auth();
 
     $errors = Utils::validate($input, [
         'correo' => ['required', 'email'],
-        'password' => ['required']
+        'password' => ['required'],
+        'nombre' => ['required'],
+        'apellido' => ['required'],
     ]);
 
     if (!empty($errors)) {
@@ -30,7 +31,16 @@ try {
         exit();
     }
 
-    $response = $auth->login($input);
+    $auth = new Auth();
+    if ($auth->checkEmailExists($input['correo'])) {
+        echo Utils::response([
+            'status' => false,
+            'message' => 'El correo electrónico ya está registrado, por favor intente con otro correo electrónico.'
+        ]);
+        exit();
+    }
+
+    $response = $auth->register($input);
     echo Utils::response($response, 200);
 } catch (\Throwable $th) {
     echo Utils::response([

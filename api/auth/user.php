@@ -9,29 +9,32 @@ use models\Auth;
 Utils::headers();
 
 try {
-    if (!Utils::validateRequestMethod('POST')) {
+    if (!Utils::validateRequestMethod('GET')) {
         Utils::responseMethodNotAllowed();
         exit();
     }
 
-    $input = Utils::getContents();
-    $auth = new Auth();
-
-    $errors = Utils::validate($input, [
-        'correo' => ['required', 'email'],
-        'password' => ['required']
-    ]);
-
-    if (!empty($errors)) {
-        echo Utils::response([
-            'status' => false,
-            'message' => $errors
-        ]);
+    if (Utils::getTokenFromHeader() === null) {
+        Utils::unauthenticated();
         exit();
     }
 
-    $response = $auth->login($input);
-    echo Utils::response($response, 200);
+    $auth = new Auth();
+
+    $user = $auth->authUser();
+
+    if ($user !== null) {
+        echo Utils::response([
+            'status' => true,
+            'user' => $user
+        ], 200);
+        exit();
+    }
+
+    echo Utils::response([
+        'status' => false,
+        'message' => 'El token no es valido.'
+    ], 404);
 } catch (\Throwable $th) {
     echo Utils::response([
         'status' => false,
